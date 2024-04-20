@@ -35,7 +35,7 @@ async def on_message(message):
         return
     
     # Vérifie si le message contient uniquement "Bichette" en tant que mot unique
-    if len(message.content.split()) == 1 and "Bichette" in message.content:
+    if len(message.content.split()) == 1 and message.content.lower() == "bichette" :
         await message.channel.send("Que voulez-vous faire ?\n1. ```Ajouter un métier```\n2. ```Maj un métier```\n3. ```Supprimer un métier```\n4. ```Liste de mes métiers```\n5. ```Rechercher un métier```")
         
         def check(m):
@@ -44,7 +44,6 @@ async def on_message(message):
         try:
             reply = await client.wait_for('message', check=check, timeout=60)  # Attend une réponse pendant 60 secondes
             if reply.content.lower() == "ajouter un métier":
-
                 user_guild_id = message.guild.id
                 
                 requete_all_metier = "SELECT name FROM possibleMetiers"
@@ -87,13 +86,33 @@ async def on_message(message):
                         return
                     
                     user_id = message.author.id
-                    
 
-                    ajouter_metier(user_id, metier, lvl, user_guild_id)
-                    
-                    # Ajoutez ici la logique pour enregistrer le métier avec le niveau dans la base de données
-                    await message.channel.send(f"Le métier {metier} de niveau {lvl} a été ajouté pour vous.")
-                
+                    # Vérifier si l'utilisateur possède déjà ce métier
+                    if is_metier_exist(user_id, metier, user_guild_id):
+                        # Si oui, demander à l'utilisateur s'il veut mettre à jour le niveau
+                        await message.channel.send(f"Vous possédez déjà le métier {metier}. Voulez-vous mettre à jour le niveau ? (oui/non)")
+                        try:
+                            update_reply = await client.wait_for('message', check=check, timeout=60)
+                            if update_reply.content.lower() == "oui":
+                                # Effectuer la mise à jour du métier
+                                maj_metier(user_id, metier, lvl, user_guild_id)
+                                await message.channel.send(f"Le niveau du métier {metier} a été mis à jour pour vous.")
+                                return
+                            elif update_reply.content.lower() == "non":
+                                await message.channel.send("Opération annulée.")
+                                return
+                            else:
+                                await message.channel.send("Réponse non valide. Opération annulée.")
+                                return
+                        except asyncio.TimeoutError:
+                            await message.channel.send("Vous avez mis trop de temps à répondre. Opération annulée.")
+                            return
+                    else:
+                        # Si l'utilisateur ne possède pas déjà ce métier, l'ajouter normalement
+                        ajouter_metier(user_id, metier, lvl, user_guild_id)
+                        await message.channel.send(f"Le métier {metier} de niveau {lvl} a été ajouté pour vous.")
+                        return
+
                 except asyncio.TimeoutError:
                     await message.channel.send("Vous avez mis trop de temps à répondre. Opération annulée.")
                 except ValueError:
@@ -150,6 +169,7 @@ async def on_message(message):
                     
                     # Ajoutez ici la logique pour enregistrer le métier avec le niveau dans la base de données
                     await message.channel.send(f"Le métier {metier} de niveau {lvl} a été mis à jour pour vous.")
+                    return
                 
                 except asyncio.TimeoutError:
                     await message.channel.send("Vous avez mis trop de temps à répondre. Opération annulée.")
@@ -200,6 +220,7 @@ async def on_message(message):
                     
                     # Ajoutez ici la logique pour enregistrer le métier avec le niveau dans la base de données
                     await message.channel.send(f"Le métier {metier} a été supprimé pour vous.")
+                    return
                 
                 except asyncio.TimeoutError:
                     await message.channel.send("Vous avez mis trop de temps à répondre. Opération annulée.")
@@ -219,6 +240,8 @@ async def on_message(message):
                         await message.channel.send(f"Vos métiers :\n{metiers_str}")
                     else:
                         await message.channel.send("Vous n'avez pas encore de métier.")
+
+                    return
                 
                 except asyncio.TimeoutError:
                     await message.channel.send("Vous avez mis trop de temps à répondre. Opération annulée.")
@@ -287,6 +310,8 @@ async def on_message(message):
                             message_sortie += f"\nlvl {str(niveau)} :\n    {utilisateurs_str}"
 
                         await message.channel.send(message_sortie)
+
+                        return
 
                     else :
                         await message.channel.send("Aucun utilisateur ne possède ce métier.")
@@ -388,6 +413,23 @@ def search(metier_name, guild) :
     finally :
         if 'connexion_mysql' in locals() and connexion_mysql.is_connected() :
             connexion_mysql.close()
+
+def is_metier_exist(user_id, metier_name, guild):
+    try:
+        requete_metier = "SELECT COUNT(*) as total FROM metiers WHERE user = %s AND metierName = %s AND guild = %s"
+        valeurs_metier = (user_id, metier_name.capitalize(), guild)
+        
+        curseur_metier = connexion_mysql.cursor(dictionary=True)
+        curseur_metier.execute(requete_metier, valeurs_metier)
+        result = curseur_metier.fetchone()["total"] > 0
+        curseur_metier.close()
+        
+        return result
+    except mysql.connector.Error as err:
+        print(f"Erreur de connexion MySQL : {err}")
+        return False
+
+
 
 
 client.run(token)
