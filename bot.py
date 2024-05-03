@@ -43,7 +43,7 @@ async def on_message(message):
         
         try:
             reply = await client.wait_for('message', check=check, timeout=60)  # Attend une réponse pendant 60 secondes
-            if reply.content.lower() == "ajouter un métier":
+            if reply.content.lower() == "ajouter un métier" or reply.content == "1":
                 user_guild_id = message.guild.id
                 
                 requete_all_metier = "SELECT name FROM possibleMetiers"
@@ -118,7 +118,7 @@ async def on_message(message):
                 except ValueError:
                     await message.channel.send("Le niveau du métier doit être un nombre entier.")
 
-            elif reply.content.lower() == "maj un métier":
+            elif reply.content.lower() == "maj un métier" or reply.content == "2":
                 
                 user_id = message.author.id
                 user_guild_id = message.guild.id
@@ -176,7 +176,7 @@ async def on_message(message):
                 except ValueError:
                     await message.channel.send("Le niveau du métier doit être un nombre entier.")
             
-            elif reply.content.lower() == "supprimer un métier":
+            elif reply.content.lower() == "supprimer un métier" or reply.content == "3":
                 
                 user_id = message.author.id
                 user_guild_id = message.guild.id
@@ -227,7 +227,7 @@ async def on_message(message):
                 except ValueError:
                     await message.channel.send("Le niveau du métier doit être un nombre entier.")
 
-            elif reply.content.lower() == "liste de mes métiers":
+            elif reply.content.lower() == "liste de mes métiers" or reply.content == "4":
                 user_guild_id = message.guild.id
                 user_id = message.author.id
                 
@@ -248,7 +248,7 @@ async def on_message(message):
                 except ValueError:
                     await message.channel.send("Le niveau du métier doit être un nombre entier.")
 
-            elif reply.content.lower() == "rechercher un métier":
+            elif reply.content.lower() == "rechercher un métier" or reply.content == "5":
                 user_guild_id = message.guild.id
                 requete_all_metier = "SELECT name FROM possibleMetiers"
                 curseur_all_metier = connexion_mysql.cursor()
@@ -400,7 +400,7 @@ def watchme(user_id, guild) :
 
 def search(metier_name, guild) :
     try :
-        requete_search = f"SELECT user, niveau FROM metiers WHERE metierName = '{metier_name.capitalize()}' AND guild = '{guild}' ORDER BY niveau DESC"
+        requete_search = f'SELECT user, niveau FROM metiers WHERE metierName = "{metier_name.capitalize()}" AND guild = "{guild}" ORDER BY niveau DESC'
         curseur = connexion_mysql.cursor(dictionary=True)
         curseur.execute(requete_search)
         resultats = curseur.fetchall()
