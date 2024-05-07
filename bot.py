@@ -139,8 +139,12 @@ async def on_message(message):
                 if all_metiers:
                     # Construire le message avec les métiers disponibles
                     message_content = "Quel métier souhaitez-vous mettre à jour ?"
+                    index_metier = {}
+                    index = 1
                     for metier in all_metiers:
-                        message_content += f"```{metier}```"
+                        message_content += f"\n{index}. ```{metier}```"
+                        index_metier[index] = metier
+                        index += 1
                     await message.channel.send(message_content)
                 else:
                     await message.channel.send("Il n'y a aucun métier disponible à mettre à jour.")
@@ -148,7 +152,12 @@ async def on_message(message):
                 
                 try:
                     metier_reply = await client.wait_for('message', check=check, timeout=60)
-                    metier = metier_reply.content.capitalize()
+                    choix_utilisateur = metier_reply.content
+
+                    if choix_utilisateur.isdigit() and int(choix_utilisateur) in index_metier :
+                        metier = index_metier[int(choix_utilisateur)].capitalize()
+                    else :
+                        metier = metier_reply.content.capitalize()
                     
                     # Vérifier si le métier est valide en le comparant avec la table possibleMetiers
                     requete_validite_metier = "SELECT COUNT(*) as total FROM possibleMetiers WHERE name = %s"
@@ -197,8 +206,12 @@ async def on_message(message):
                 if all_metiers:
                     # Construire le message avec les métiers disponibles
                     message_content = "Quel métier souhaitez-vous supprimer ?"
+                    index_metier = {}
+                    index = 1
                     for metier in all_metiers:
-                        message_content += f"```{metier}```"
+                        message_content += f"\n{index}. ```{metier}```"
+                        index_metier[index] = metier
+                        index += 1
                     await message.channel.send(message_content)
                 else:
                     await message.channel.send("Il n'y a aucun métier disponible à supprimer.")
@@ -207,7 +220,12 @@ async def on_message(message):
                 
                 try:
                     metier_reply = await client.wait_for('message', check=check, timeout=60)
-                    metier = metier_reply.content.capitalize()
+                    choix_utilisateur = metier_reply.content
+
+                    if choix_utilisateur.isdigit() and int(choix_utilisateur) in index_metier :
+                        metier = index_metier[int(choix_utilisateur)].capitalize()
+                    else :
+                        metier = metier_reply.content.capitalize()
                     
                     # Vérifier si le métier est valide en le comparant avec la table possibleMetiers
                     requete_validite_metier = "SELECT COUNT(*) as total FROM possibleMetiers WHERE name = %s"
@@ -266,8 +284,12 @@ async def on_message(message):
                 if all_metiers:
                     # Construire le message avec les métiers disponibles
                     message_content = "Quel métier souhaitez-vous ajouter ?"
+                    index_metier = {}
+                    index = 1
                     for metier in all_metiers:
-                        message_content += f"```{metier}```"
+                        message_content += f"\n{index}. ```{metier}```"
+                        index_metier[index] = metier
+                        index += 1
                     await message.channel.send(message_content)
                 else:
                     await message.channel.send("Il n'y a aucun métier disponible à ajouter.")
@@ -275,7 +297,12 @@ async def on_message(message):
                 
                 try:
                     metier_reply = await client.wait_for('message', check=check, timeout=60)
-                    metier = metier_reply.content.capitalize()
+                    choix_utilisateur = metier_reply.content
+
+                    if choix_utilisateur.isdigit() and int(choix_utilisateur) in index_metier :
+                        metier = index_metier[int(choix_utilisateur)].capitalize()
+                    else :
+                        metier = metier_reply.content.capitalize()
                     
                     # Vérifier si le métier est valide en le comparant avec la table possibleMetiers
                     requete_validite_metier = "SELECT COUNT(*) as total FROM possibleMetiers WHERE name = %s"
