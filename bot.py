@@ -4,6 +4,7 @@ from discord.ext import commands
 import mysql.connector
 from dotenv import load_dotenv
 import os
+import sys
 
 intents = discord.Intents.all()
 intents.message_content = True
@@ -42,6 +43,9 @@ async def on_message(message):
             return m.author == message.author and m.channel == message.channel
         
         try:
+            connexion_mysql = mysql.connector.connect(**config_mysql)
+            print("Connexion SQL établie")
+            sys.stdout.flush()
             reply = await client.wait_for('message', check=check, timeout=60)  # Attend une réponse pendant 60 secondes
             if reply.content.lower() == "ajouter un métier" or reply.content == "1":
                 user_guild_id = message.guild.id
@@ -142,14 +146,24 @@ async def on_message(message):
                     index_metier = {}
                     index = 1
                     for metier in all_metiers:
-                        message_content += f"\n{index}. ```{metier}```"
-                        index_metier[index] = metier
-                        index += 1
-                    await message.channel.send(message_content)
+                        # Vérifier si le métier est de niveau 100
+                        requete_niveau_metier = f"SELECT niveau FROM metiers WHERE metierName = '{metier}' AND user = {user_id} AND guild = {user_guild_id}"
+                        curseur_niveau_metier = connexion_mysql.cursor()
+                        curseur_niveau_metier.execute(requete_niveau_metier)
+                        niveau_metier = curseur_niveau_metier.fetchone()[0]
+                        if niveau_metier < 100:
+                            message_content += f"\n{index}. ```{metier}```"
+                            index_metier[index] = metier
+                            index += 1
+                        curseur_niveau_metier.close()
+                    if index == 1:
+                        await message.channel.send("Il n'y a aucun métier disponible à mettre à jour.")
+                    else:
+                        await message.channel.send(message_content)
                 else:
                     await message.channel.send("Il n'y a aucun métier disponible à mettre à jour.")
 
-                
+                            
                 try:
                     metier_reply = await client.wait_for('message', check=check, timeout=60)
                     choix_utilisateur = metier_reply.content
@@ -193,6 +207,7 @@ async def on_message(message):
                     await message.channel.send("Vous avez mis trop de temps à répondre. Opération annulée.")
                 except ValueError:
                     await message.channel.send("Le niveau du métier doit être un nombre entier.")
+
             
             elif reply.content.lower() == "supprimer un métier" or reply.content == "3":
                 
@@ -361,6 +376,8 @@ async def on_message(message):
                 
         except asyncio.TimeoutError:
             await message.channel.send("Vous avez mis trop de temps à répondre. Opération annulée.")
+        finally :
+            connexion_mysql.close()
 
 
 def ajouter_metier(user_id, metier_name, niveau, guild):
