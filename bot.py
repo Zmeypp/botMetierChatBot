@@ -377,6 +377,8 @@ async def on_message(message):
             await message.channel.send("Vous avez mis trop de temps à répondre. Opération annulée.")
         finally :
             connexion_mysql.close()
+            print("Connexion SQL fermée")
+            sys.stdout.flush()
 
 
 def ajouter_metier(user_id, metier_name, niveau, guild, connexion_mysql):
