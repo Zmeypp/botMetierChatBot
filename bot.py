@@ -5,6 +5,7 @@ import mysql.connector
 from dotenv import load_dotenv
 import os
 import sys
+import subprocess
 
 intents = discord.Intents.all()
 intents.message_content = True
@@ -369,6 +370,8 @@ async def on_message(message):
                 except asyncio.TimeoutError:
                     await message.channel.send("Vous avez mis trop de temps à répondre. Opération annulée.")
 
+            elif reply.content.lower() == "get logs" :
+                logs = await get_docker_logs('bot', message=message)
             else :
                 await message.channel.send("Votre choix n'est pas valide. Veuillez me rappeler avec le mot 'Bichette' lorsque vous saurez quoi faire.")
                 
@@ -483,6 +486,28 @@ def is_metier_exist(user_id, metier_name, guild, connexion_mysql):
         print(f"Erreur de connexion MySQL : {err}")
         return False
 
+async def get_docker_logs(container_name, message):
+    try:
+        # Commande SSH pour se connecter au système hôte et exécuter la commande Docker logs
+        ssh_command = f'sshpass -p "Lvnp1parm1rqdev!482" ssh -o StrictHostKeyChecking=no EraserheadMHA@192.168.0.81 "/usr/local/bin/docker logs {container_name} 2>&1"'
+        
+        # Exécuter la commande SSH et capturer la sortie
+        result = subprocess.run(ssh_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        
+        # Vérifier si la commande s'est exécutée avec succès
+        if result.returncode == 0:
+            # Diviser les logs en morceaux de taille maximale de 1999 caractères
+            logs = result.stdout.strip()
+            log_chunks = [logs[i:i+1999] for i in range(0, len(logs), 1999)]
+            # Envoyer chaque morceau de logs
+            for chunk in log_chunks:
+                await message.channel.send(chunk)
+        else:
+            # Retourner l'erreur
+            error_message = result.stderr.strip() if result.stderr else "Erreur lors de l'exécution de la commande Docker."
+            await message.channel.send(error_message)
+    except Exception as e:
+        await message.channel.send(f"Une erreur s'est produite: {e}")
 
 
 
