@@ -28,7 +28,6 @@ config_mysql = {
     'host': db_host,
     'database': db_name
 }
-connexion_mysql = mysql.connector.connect(**config_mysql)
 
 @client.event
 async def on_message(message):
@@ -101,14 +100,14 @@ async def on_message(message):
                     user_id = message.author.id
 
                     # Vérifier si l'utilisateur possède déjà ce métier
-                    if is_metier_exist(user_id, metier, user_guild_id):
+                    if is_metier_exist(user_id, metier, user_guild_id, connexion_mysql):
                         # Si oui, demander à l'utilisateur s'il veut mettre à jour le niveau
                         await message.channel.send(f"Vous possédez déjà le métier {metier}. Voulez-vous mettre à jour le niveau ? (oui/non)")
                         try:
                             update_reply = await client.wait_for('message', check=check, timeout=60)
                             if update_reply.content.lower() == "oui":
                                 # Effectuer la mise à jour du métier
-                                maj_metier(user_id, metier, lvl, user_guild_id)
+                                maj_metier(user_id, metier, lvl, user_guild_id, connexion_mysql)
                                 await message.channel.send(f"Le niveau du métier {metier} a été mis à jour pour vous.")
                                 return
                             elif update_reply.content.lower() == "non":
@@ -122,7 +121,7 @@ async def on_message(message):
                             return
                     else:
                         # Si l'utilisateur ne possède pas déjà ce métier, l'ajouter normalement
-                        ajouter_metier(user_id, metier, lvl, user_guild_id)
+                        ajouter_metier(user_id, metier, lvl, user_guild_id, connexion_mysql)
                         await message.channel.send(f"Le métier {metier} de niveau {lvl} a été ajouté pour vous.")
                         return
 
@@ -197,7 +196,7 @@ async def on_message(message):
                     user_id = message.author.id
                     
 
-                    maj_metier(user_id, metier, lvl, user_guild_id)
+                    maj_metier(user_id, metier, lvl, user_guild_id, connexion_mysql)
                     
                     # Ajoutez ici la logique pour enregistrer le métier avec le niveau dans la base de données
                     await message.channel.send(f"Le métier {metier} de niveau {lvl} a été mis à jour pour vous.")
@@ -258,7 +257,7 @@ async def on_message(message):
                     user_id = message.author.id
                     
 
-                    delete_metier(user_id, metier, user_guild_id)
+                    delete_metier(user_id, metier, user_guild_id, connexion_mysql)
                     
                     # Ajoutez ici la logique pour enregistrer le métier avec le niveau dans la base de données
                     await message.channel.send(f"Le métier {metier} a été supprimé pour vous.")
@@ -274,7 +273,7 @@ async def on_message(message):
                 user_id = message.author.id
                 
 
-                my_metiers = watchme(user_id, user_guild_id)
+                my_metiers = watchme(user_id, user_guild_id, connexion_mysql)
 
                 try :
                     if my_metiers :
@@ -333,7 +332,7 @@ async def on_message(message):
                         return
                     
                     
-                    resultats = search(metier, user_guild_id)
+                    resultats = search(metier, user_guild_id, connexion_mysql)
 
                     if resultats :
                         # Organiser les résultats par niveau
@@ -380,7 +379,7 @@ async def on_message(message):
             connexion_mysql.close()
 
 
-def ajouter_metier(user_id, metier_name, niveau, guild):
+def ajouter_metier(user_id, metier_name, niveau, guild, connexion_mysql):
     try:
 
         # Exécution de la requête SQL pour enregistrer le métier pour l'utilisateur
@@ -402,7 +401,7 @@ def ajouter_metier(user_id, metier_name, niveau, guild):
         if 'connexion_mysql' in locals() and connexion_mysql.is_connected():
             connexion_mysql.close()
 
-def maj_metier(user_id, metier_name, niveau, guild) :
+def maj_metier(user_id, metier_name, niveau, guild, connexion_mysql) :
     try :
         requete_maj = "UPDATE metiers SET niveau = %s WHERE user = %s AND metierName = %s AND guild = %s"
         valeur_maj = (niveau, user_id, metier_name.capitalize(), guild)
@@ -420,7 +419,7 @@ def maj_metier(user_id, metier_name, niveau, guild) :
         if 'connexion_mysql' in locals() and connexion_mysql.is_connected() :
             connexion_mysql.close()
 
-def delete_metier(user_id, metier_name, guild) :
+def delete_metier(user_id, metier_name, guild, connexion_mysql) :
     try :
         requete_suppression = "DELETE FROM metiers WHERE user = %s AND metierName = %s AND guild = %s"
         valeurs_suppression = (user_id, metier_name.capitalize(), guild)
@@ -439,7 +438,7 @@ def delete_metier(user_id, metier_name, guild) :
             connexion_mysql.close()
 
 
-def watchme(user_id, guild) :
+def watchme(user_id, guild, connexion_mysql) :
     requete_myself = "SELECT metierName, niveau FROM metiers WHERE user = %s AND guild = %s"
     valeur_myself = (user_id, guild,)
 
@@ -451,7 +450,7 @@ def watchme(user_id, guild) :
     return my_metiers
 
 
-def search(metier_name, guild) :
+def search(metier_name, guild, connexion_mysql) :
     try :
         requete_search = f'SELECT user, niveau FROM metiers WHERE metierName = "{metier_name.capitalize()}" AND guild = "{guild}" ORDER BY niveau DESC'
         curseur = connexion_mysql.cursor(dictionary=True)
@@ -467,7 +466,7 @@ def search(metier_name, guild) :
         if 'connexion_mysql' in locals() and connexion_mysql.is_connected() :
             connexion_mysql.close()
 
-def is_metier_exist(user_id, metier_name, guild):
+def is_metier_exist(user_id, metier_name, guild, connexion_mysql):
     try:
         requete_metier = "SELECT COUNT(*) as total FROM metiers WHERE user = %s AND metierName = %s AND guild = %s"
         valeurs_metier = (user_id, metier_name.capitalize(), guild)
