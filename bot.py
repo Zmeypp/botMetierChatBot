@@ -36,7 +36,7 @@ async def on_message(message):
         return
     
     # Vérifie si le message contient uniquement "Bichette" en tant que mot unique
-    if len(message.content.split()) == 1 and message.content.lower() == "bichette" :
+    if "bichette" in message.content.lower() :
         await message.channel.send("Que voulez-vous faire ?\n1. ```Ajouter un métier```\n2. ```Maj un métier```\n3. ```Supprimer un métier```\n4. ```Liste de mes métiers```\n5. ```Rechercher un métier```")
         
         def check(m):
