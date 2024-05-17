@@ -463,6 +463,9 @@ async def on_message(message):
                     await message.channel.send("Tu as trouvé un easter egg.")
                     await message.channel.send("https://tenor.com/view/devil-twerk-halloween-funny-satan-gif-24351935")
 
+                elif reply.content.lower() == "roll" :
+                    await message.channel.send("Un super easter egg !")
+                    await message.channel.send('https://cdn.discordapp.com/attachments/664217071151874119/1240714992500736082/3wGT.gif?ex=66483a21&is=6646e8a1&hm=59b6e72a2519bd381e1e1bfb175876f8cd65a01030e6cb3076e5d9f2f1291f6f&')
 
                 else :
                     await message.channel.send("Votre choix n'est pas valide. Veuillez me rappeler avec le mot 'Bichette' lorsque vous saurez quoi faire.")
