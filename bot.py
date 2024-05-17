@@ -170,7 +170,7 @@ async def on_message(message):
                             index = 1
                             for metier in all_metiers:
                                 # Vérifier si le métier est de niveau 100
-                                requete_niveau_metier = f"SELECT niveau FROM metiers WHERE metierName = '{metier}' AND user = {user_id} AND guild = {user_guild_id}"
+                                requete_niveau_metier = f'SELECT niveau FROM metiers WHERE metierName = "{metier}" AND user = {user_id} AND guild = {user_guild_id}'
                                 curseur_niveau_metier = connexion_mysql.cursor()
                                 curseur_niveau_metier.execute(requete_niveau_metier)
                                 niveau_metier = curseur_niveau_metier.fetchone()[0]
