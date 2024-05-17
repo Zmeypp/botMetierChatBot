@@ -258,68 +258,71 @@ async def on_message(message):
                 elif reply.content.lower() == "supprimer un métier" or reply.content == "4":
                     
 
-                    user_id = message.author.id
-                    user_guild_id = message.guild.id
-
-                    requete_all_metier = f"SELECT metierName FROM metiers WHERE user = {user_id} and guild = {user_guild_id}"
-                    curseur_all_metier = connexion_mysql.cursor()
-                    curseur_all_metier.execute(requete_all_metier)
-                    all_metiers = [row[0] for row in curseur_all_metier.fetchall()]
-                    if all_metiers:
-                        # Construire le message avec les métiers disponibles
-                        message_content = "Quel métier souhaitez-vous supprimer ?"
-                        index_metier = {}
-                        index = 1
-                        for metier in all_metiers:
-                            message_content += f"\n{index}. ```{metier}```"
-                            index_metier[index] = metier
-                            index += 1
-                        await message.channel.send(message_content)
-                    else:
-                        await message.channel.send("Il n'y a aucun métier disponible à supprimer.")
+                    
 
                     
                     try:
-                        metier_reply = await client.wait_for('message', check=check, timeout=60)
-                        choix_utilisateur = metier_reply.content
-
-                        if choix_utilisateur.isdigit() and int(choix_utilisateur) in index_metier :
-                            metier = index_metier[int(choix_utilisateur)].capitalize()
-                        else :
-                            metier = metier_reply.content.capitalize()
-                        
-                        # Vérifier si le métier est valide en le comparant avec la table possibleMetiers
-                        requete_validite_metier = "SELECT COUNT(*) as total FROM possibleMetiers WHERE name = %s"
-                        valeurs_validite_metier = (metier,)
-                        curseur_validite_metier = connexion_mysql.cursor(dictionary=True)
-                        curseur_validite_metier.execute(requete_validite_metier, valeurs_validite_metier)
-                        validite_metier_resultat = curseur_validite_metier.fetchone()
-                        total_validite_metier = validite_metier_resultat["total"]
-                        curseur_validite_metier.close()
-
-                        if not total_validite_metier:
-                            await message.channel.send(f"{metier.capitalize()} n'est pas un métier valide. Veuillez choisir parmi les métiers disponibles.")
                         
                         user_id = message.author.id
-                        
+                        user_guild_id = message.guild.id
 
-                        delete_metier(user_id, metier, user_guild_id, connexion_mysql)
-                        
-                        # Ajoutez ici la logique pour enregistrer le métier avec le niveau dans la base de données
-                        await message.channel.send(f"Le métier {metier} a été supprimé pour vous.")
+                        choice_metier = True
+                        while choice_metier == True :
+                            requete_all_metier = f"SELECT metierName FROM metiers WHERE user = {user_id} and guild = {user_guild_id}"
+                            curseur_all_metier = connexion_mysql.cursor()
+                            curseur_all_metier.execute(requete_all_metier)
+                            all_metiers = [row[0] for row in curseur_all_metier.fetchall()]
+                            if all_metiers:
+                                # Construire le message avec les métiers disponibles
+                                message_content = "Quel métier souhaitez-vous supprimer ?"
+                                index_metier = {}
+                                index = 1
+                                for metier in all_metiers:
+                                    message_content += f"\n{index}. ```{metier}```"
+                                    index_metier[index] = metier
+                                    index += 1
+                                await message.channel.send(message_content)
+                            else:
+                                await message.channel.send("Il n'y a aucun métier disponible à supprimer.")
+                                choice_metier = False
+                                break
+                            
+                            metier_reply = await client.wait_for('message', check=check, timeout=60)
+                            choix_utilisateur = metier_reply.content
+
+                            if choix_utilisateur.isdigit() and int(choix_utilisateur) in index_metier :
+                                metier = index_metier[int(choix_utilisateur)].capitalize()
+                            else :
+                                metier = metier_reply.content.capitalize()
+                            
+                            # Vérifier si le métier est valide en le comparant avec la table possibleMetiers
+                            requete_validite_metier = "SELECT COUNT(*) as total FROM possibleMetiers WHERE name = %s"
+                            valeurs_validite_metier = (metier,)
+                            curseur_validite_metier = connexion_mysql.cursor(dictionary=True)
+                            curseur_validite_metier.execute(requete_validite_metier, valeurs_validite_metier)
+                            validite_metier_resultat = curseur_validite_metier.fetchone()
+                            total_validite_metier = validite_metier_resultat["total"]
+                            curseur_validite_metier.close()
+
+                            if not total_validite_metier:
+                                await message.channel.send(f"{metier.capitalize()} n'est pas un métier valide. Veuillez choisir parmi les métiers disponibles.")
+                                continue
+                            
+                            user_id = message.author.id
+                            
+
+                            delete_metier(user_id, metier, user_guild_id, connexion_mysql)
+                            
+                            # Ajoutez ici la logique pour enregistrer le métier avec le niveau dans la base de données
+                            await message.channel.send(f"Le métier {metier} a été supprimé pour vous.")
+                            choice_metier = False
+                            break
                     
                     except asyncio.TimeoutError:
                         await message.channel.send("Vous avez mis trop de temps à répondre. Opération annulée.")
                     except ValueError:
                         await message.channel.send("Le niveau du métier doit être un nombre entier.")
 
-                    
-
-                    
-                            
-                            
-                        
-                        
 
                 elif reply.content.lower() == "liste de mes métiers" or reply.content == "5":
                     user_guild_id = message.guild.id
@@ -342,87 +345,107 @@ async def on_message(message):
                     except ValueError:
                         await message.channel.send("Le niveau du métier doit être un nombre entier.")
 
+
+
+
+
+
                 elif reply.content.lower() == "rechercher un métier" or reply.content == "6":
                     user_guild_id = message.guild.id
-                    requete_all_metier = "SELECT name FROM possibleMetiers"
-                    curseur_all_metier = connexion_mysql.cursor()
-                    curseur_all_metier.execute(requete_all_metier)
-                    all_metiers = [row[0] for row in curseur_all_metier.fetchall()]
-                    if all_metiers:
-                        # Construire le message avec les métiers disponibles
-                        message_content = "Quel métier souhaitez-vous rechercher ?"
-                        index_metier = {}
-                        index = 1
-                        for metier in all_metiers:
-                            message_content += f"\n{index}. ```{metier}```"
-                            index_metier[index] = metier
-                            index += 1
-                        await message.channel.send(message_content)
-                    else:
-                        await message.channel.send("Il n'y a aucun métier disponible à ajouter.")
+                    
 
                     
                     try:
-                        metier_reply = await client.wait_for('message', check=check, timeout=60)
-                        choix_utilisateur = metier_reply.content
 
-                        if choix_utilisateur.isdigit() and int(choix_utilisateur) in index_metier :
-                            metier = index_metier[int(choix_utilisateur)].capitalize()
-                        else :
-                            metier = metier_reply.content.capitalize()
-                        
-                        # Vérifier si le métier est valide en le comparant avec la table possibleMetiers
-                        requete_validite_metier = "SELECT COUNT(*) as total FROM possibleMetiers WHERE name = %s"
-                        valeurs_validite_metier = (metier,)
-                        curseur_validite_metier = connexion_mysql.cursor(dictionary=True)
-                        curseur_validite_metier.execute(requete_validite_metier, valeurs_validite_metier)
-                        validite_metier_resultat = curseur_validite_metier.fetchone()
-                        total_validite_metier = validite_metier_resultat["total"]
-                        curseur_validite_metier.close()
+                        choice_metier = True
+                        while choice_metier == True :
+                            requete_all_metier = "SELECT name FROM possibleMetiers"
+                            curseur_all_metier = connexion_mysql.cursor()
+                            curseur_all_metier.execute(requete_all_metier)
+                            all_metiers = [row[0] for row in curseur_all_metier.fetchall()]
+                            if all_metiers:
+                                # Construire le message avec les métiers disponibles
+                                message_content = "Quel métier souhaitez-vous rechercher ?"
+                                index_metier = {}
+                                index = 1
+                                for metier in all_metiers:
+                                    message_content += f"\n{index}. ```{metier}```"
+                                    index_metier[index] = metier
+                                    index += 1
+                                await message.channel.send(message_content)
+                            else:
+                                await message.channel.send("Il n'y a aucun métier disponible à ajouter.")
+                                choice_metier = False
+                                break
 
-                        if not total_validite_metier:
-                            await message.channel.send(f"{metier.capitalize()} n'est pas un métier valide. Veuillez choisir parmi les métiers disponibles.")
-                        
-                        
-                        resultats = search(metier, user_guild_id, connexion_mysql)
+                            metier_reply = await client.wait_for('message', check=check, timeout=60)
+                            choix_utilisateur = metier_reply.content
 
-                        if resultats :
-                            # Organiser les résultats par niveau
-                            niveaux_utilisateurs = {}
-                            for resultat in resultats:
-                                niveau = resultat['niveau']
-                                utilisateur_id = resultat['user']
-
-                                user = message.guild.get_member(utilisateur_id)
-
-                                if user:
-                                    utilisateur_nom = user.nick
-                                else:
-                                    utilisateur_nom = f"Utilisateur inconnu ({utilisateur_id})"
-                                print(utilisateur_nom)
-
-                                if niveau not in niveaux_utilisateurs:
-                                    niveaux_utilisateurs[niveau] = []
-                                niveaux_utilisateurs[niveau].append(utilisateur_nom)
-
-                            # Créer le message de sortie
-                            message_sortie = f"Joueurs ayant le métier '{metier.capitalize()}' et leurs niveaux :\n"
-
-                            for niveau, utilisateurs in niveaux_utilisateurs.items():
-                                utilisateurs_str = "\n    ".join(utilisateurs)
-                                message_sortie += f"\nlvl {str(niveau)} :\n    {utilisateurs_str}"
-
-                            await message.channel.send(message_sortie)
-
+                            if choix_utilisateur.isdigit() and int(choix_utilisateur) in index_metier :
+                                metier = index_metier[int(choix_utilisateur)].capitalize()
+                            else :
+                                metier = metier_reply.content.capitalize()
                             
+                            # Vérifier si le métier est valide en le comparant avec la table possibleMetiers
+                            requete_validite_metier = "SELECT COUNT(*) as total FROM possibleMetiers WHERE name = %s"
+                            valeurs_validite_metier = (metier,)
+                            curseur_validite_metier = connexion_mysql.cursor(dictionary=True)
+                            curseur_validite_metier.execute(requete_validite_metier, valeurs_validite_metier)
+                            validite_metier_resultat = curseur_validite_metier.fetchone()
+                            total_validite_metier = validite_metier_resultat["total"]
+                            curseur_validite_metier.close()
 
-                        else :
-                            await message.channel.send("Aucun utilisateur ne possède ce métier.")
+                            if not total_validite_metier:
+                                await message.channel.send(f"{metier.capitalize()} n'est pas un métier valide. Veuillez choisir parmi les métiers disponibles.")
+                                continue
+                            
+                            
+                            resultats = search(metier, user_guild_id, connexion_mysql)
+
+                            if resultats :
+                                # Organiser les résultats par niveau
+                                niveaux_utilisateurs = {}
+                                for resultat in resultats:
+                                    niveau = resultat['niveau']
+                                    utilisateur_id = resultat['user']
+
+                                    user = message.guild.get_member(utilisateur_id)
+
+                                    if user:
+                                        utilisateur_nom = user.nick
+                                    else:
+                                        utilisateur_nom = f"Utilisateur inconnu ({utilisateur_id})"
+                                    print(utilisateur_nom)
+
+                                    if niveau not in niveaux_utilisateurs:
+                                        niveaux_utilisateurs[niveau] = []
+                                    niveaux_utilisateurs[niveau].append(utilisateur_nom)
+
+                                # Créer le message de sortie
+                                message_sortie = f"Joueurs ayant le métier '{metier.capitalize()}' et leurs niveaux :\n"
+
+                                for niveau, utilisateurs in niveaux_utilisateurs.items():
+                                    utilisateurs_str = "\n    ".join(utilisateurs)
+                                    message_sortie += f"\nlvl {str(niveau)} :\n    {utilisateurs_str}"
+
+                                await message.channel.send(message_sortie)
+
+                                
+
+                            else :
+                                await message.channel.send("Aucun utilisateur ne possède ce métier.")
+                                choice_metier = False
+                                break
 
                     except asyncio.TimeoutError:
                         await message.channel.send("Vous avez mis trop de temps à répondre. Opération annulée.")
                         continue_loop = False
                         break
+
+
+
+
+
 
                 elif reply.content.lower() == "ne rien faire" or reply.content == "7":
                     await message.channel.send("Vous avez choisi de ne rien faire. Votre sentence est irrévocable.")
@@ -434,6 +457,13 @@ async def on_message(message):
                     logs = await get_docker_logs('bot', message=message)
                     continue_loop = False
                     break
+
+                
+                elif reply.content == "666" :
+                    await message.channel.send("Tu as trouvé un easter egg.")
+                    await message.channel.send("https://tenor.com/view/devil-twerk-halloween-funny-satan-gif-24351935")
+
+
                 else :
                     await message.channel.send("Votre choix n'est pas valide. Veuillez me rappeler avec le mot 'Bichette' lorsque vous saurez quoi faire.")
                     continue_loop = False
